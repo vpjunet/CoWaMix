@@ -1,0 +1,25 @@
+git clone https://github.com/kivy/buildozer.git
+zip
+unzip
+python3
+python3-pip
+ipython3
+cython
+build-essential
+libltdl-dev
+libffi-dev
+libssl-dev
+python-dev
+xclip
+xsel
+cmake
+autoreconf
+autoconf
+autopoint
+pkg-config
+libncurses-dev
+libncurses5-dev
+libncursesw5-dev
+libtinfo5
+libatlas-base-dev
+default-jdk
