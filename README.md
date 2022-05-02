@@ -18,7 +18,7 @@ or Windows
 ```bash
 ./cowamix_venv/Scripts/activate
 ```
-and install the dependencies
+and install the requirements
 ```bash
 python3 -m pip install kivy numpy trust-constr more-itertools
 ```
