@@ -1,6 +1,6 @@
 **Terms & Conditions**
 
-By downloading or using the app, these terms will automatically apply to you – you should make sure therefore that you read them carefully before using the app. You may distribute an original or a modified version of the app as long as you comply with its [license terms] (https://github.com/vpjunet/CoWaMix/blob/main/LICENSE).
+By downloading or using the app, these terms will automatically apply to you – you should make sure therefore that you read them carefully before using the app. You may distribute an original or a modified version of the app as long as you comply with its [license terms](https://github.com/vpjunet/CoWaMix/blob/main/LICENSE).
 
 Valentin Junet is committed to ensuring that the app is as useful and efficient as possible. For that reason, we reserve the right to make changes to the app or to charge for its services, at any time and for any reason. We will never charge you for the app or its services without making it very clear to you exactly what you’re paying for.
 
