@@ -36,3 +36,6 @@ Make sure that you have access to this path.
 You can also change this path in the class `cowamix` with the input argument `user_path`
 of the class `MenuScreenManager`.
 
+## License
+CoWaMix is licensed under [GPLv3](../main/LICENSE).
+
