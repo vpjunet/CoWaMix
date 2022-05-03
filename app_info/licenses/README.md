@@ -30,10 +30,10 @@ pkg_resources
 pygments  
 requests  
 setuptools  
-libdivide (within numpy)  
-dragon4 (within numpy)  
-tempita (within numpy)  
-lapack-lite (within numpy)  
+libdivide  
+dragon4  
+tempita  
+lapack-lite  
 pexpect  
 sh  
 six  
