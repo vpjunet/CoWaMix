@@ -2,7 +2,7 @@
 ## Coffee Water Mix 
 A tool to help you mix waters and create brewing water recipes for your coffee.
 
-The app will soon be available on [Google Play Store](https://play.google.com/store). Read the [Privacy Policy](../main/app_info/privacy_policy/privacy_policy.md) and the [Terms and Conditions](../main/app_info/terms_and_conditions/terms_and_conditions.md).
+The app is available on [Google Play Store](https://play.google.com/store/apps/details?id=ch.vpjunet.cowamix). Read the [Privacy Policy](../main/app_info/privacy_policy/privacy_policy.md) and the [Terms and Conditions](../main/app_info/terms_and_conditions/terms_and_conditions.md).
 ![alt text](../main/icon.png)
 ## Installation
 To install CoWaMix, clone the repository
