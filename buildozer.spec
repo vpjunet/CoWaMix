@@ -30,7 +30,7 @@ source.include_patterns = license
 #source.exclude_patterns = images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 0.1.0
+version = 0.1.2
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]

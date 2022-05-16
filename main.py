@@ -14,7 +14,7 @@
     # You should have received a copy of the GNU General Public License
     # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+#version 0.1.2
 from kivy.app import App
 from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -50,7 +50,7 @@ to find optimal ratios of waters and the second one contains the GUI for the app
 #comment/uncomment to play with the size
 # Window.size = (280, 600)
 # Window.size = (600,330)
-# Window.size = (200, 600)
+# Window.size = (330, 600)
 
 #The height/font size of the interface is determined by the height of the window.
 #If the width of the window is higher than the height, reverse this by multiplying the values by w_size.
@@ -681,12 +681,14 @@ class MainRecipeScreen(Screen):
                 setattr(layout,name_curr,Button(text=name_curr,font_size=f_size,size_hint_y=None, height=h))
                 layout.add_widget(getattr(layout,name_curr))
 
-        root = ScrollView(size_hint=(1, None),size=(Window.width, 0.8*Window.height),do_scroll_x=False,do_scroll_y=True)
+        root = ScrollView(size_hint=(1, None),size=(Window.width, 0.7*Window.height),do_scroll_x=False,do_scroll_y=True)
         root.layout = layout
         root.add_widget(root.layout)
 
         layout_ext.root = root
         layout_ext.add_widget(layout_ext.root)
+        layout_ext.add_recipe = Button(text='Add Recipe',font_size=f_size,size_hint_y=None, height=h)
+        layout_ext.add_widget(layout_ext.add_recipe)
         layout_ext.back = Button(text='Back',font_size=f_size,size_hint_y=None, height=h)
         layout_ext.add_widget(layout_ext.back)
 
@@ -767,6 +769,162 @@ class RecipeDetailsScreen(Screen):
                 q = c*input
                 for (i,n) in enumerate(self.waters):
                     self.root.layout_ext.layout.dosage_g[n].text = str(round(1000*q*self.p[i],1)) + ' g'
+
+#the screen with the details of a given recipe and with the option to get the dosage of the waters in the recipe for a desired quantity of water
+class AddManualRecipeScreen(Screen):
+    def __init__(self,water_dict,**kwargs):
+        super(AddManualRecipeScreen,self).__init__(**kwargs)
+        keys_water_p = ['% Water #1','% Water #2','% Water #3']
+        self.keys_water_p = keys_water_p
+        keys = ['General Hardness [ppm as CaCO3]','Alkalinity [ppm as CaCO3]','GH:KH','Calcium [ppm as CaCO3]','Magnesium [ppm as CaCO3]','Cost']
+        layout_ext = GridLayout()
+        h = (0.8*Window.height/10)*w_size
+        f_size = 0.7*0.5*h
+        self.f_size=f_size
+        self.h = h
+        layout_ext.size_hint_y = None
+        layout_ext.bind(minimum_height=layout_ext.setter('height'))
+        layout_ext.cols=1
+
+        layout = GridLayout()
+        layout.cols=2
+        layout.size_hint_y = None
+        layout.bind(minimum_height=layout.setter('height'))
+        layout.add_widget(Label(text='Name',font_size=f_size,size_hint_y=None,height=h))
+        layout.name = TextInput(text='',font_size=f_size,size_hint_y=None,height=h,multiline=False)
+        layout.add_widget(layout.name)
+        self.water_dict = water_dict
+        water_list = ['-']+['%'+k for k in water_dict.keys()]
+        class MySpinnerOption(SpinnerOption):
+            def __init__(self,**kwargs):
+                super(MySpinnerOption,self).__init__(**kwargs)
+                self.font_size = f_size
+        layout.water_spinner1 = Spinner(text=keys_water_p[0],values=water_list,size_hint_y=None,height = h,font_size = f_size,option_cls=MySpinnerOption)
+        layout.water_p1 = TextInput(text='',font_size=f_size,size_hint_y=None,height=h,multiline=False)
+        layout.add_widget(layout.water_spinner1)
+        layout.add_widget(layout.water_p1)
+        layout.water_spinner2 = Spinner(text=keys_water_p[1],values=water_list,size_hint_y=None,height = h,font_size = f_size,option_cls=MySpinnerOption)
+        layout.water_p2 = TextInput(text='',font_size=f_size,size_hint_y=None,height=h,multiline=False)
+        layout.add_widget(layout.water_spinner2)
+        layout.add_widget(layout.water_p2)
+        layout.water_spinner3 = Spinner(text=keys_water_p[2],values=water_list,size_hint_y=None,height = h,font_size = f_size,option_cls=MySpinnerOption)
+        layout.water_p3 = Label(text='X',font_size=f_size,size_hint_y=None,height=h)
+        layout.add_widget(layout.water_spinner3)
+        layout.add_widget(layout.water_p3)
+        self.keys = keys
+        for key in keys:
+            layout.add_widget(Label(text=key.replace(' [','\n['),font_size=f_size,size_hint_y=None,height=h))
+            setattr(layout,key,Label(text='X',font_size=f_size,size_hint_y=None,height=h))
+            layout.add_widget(getattr(layout,key))
+
+        layout_ext.layout = layout
+        layout_ext.add_widget(layout_ext.layout)
+        layout_ext.view = Button(text='View Recipe',font_size=f_size,size_hint_y=None,width=layout_ext.width/2,height=h)
+        layout_ext.view.bind(on_release=self.view_recipe)
+        layout_ext.add_widget(layout_ext.view)
+        layout_ext.add = Button(text='Add Recipe',font_size=f_size,size_hint_y=None,width=layout_ext.width/2,height=h)
+        layout_ext.add_widget(layout_ext.add)
+        layout_ext.back = Button(text='Back',font_size=f_size,size_hint_y=None,width=layout_ext.width/2,height=h)
+        layout_ext.add_widget(layout_ext.back)
+
+        root = ScrollView(size_hint=(1, None),size=(Window.width, Window.height),do_scroll_x=False,do_scroll_y=True)
+        root.layout_ext = layout_ext
+        root.add_widget(root.layout_ext)
+        self.root = root
+        self.add_widget(self.root)
+        self.name = 'add_manual_recipe'
+
+    def view_recipe(self,instance):
+        eps = 1e-4
+        waters = [instance.parent.layout.water_spinner1.text.replace('%',''),instance.parent.layout.water_spinner2.text.replace('%',''),instance.parent.layout.water_spinner3.text.replace('%','')]
+        p1 = convert_to_float_or_popup(instance.parent.layout.water_p1.text)
+        if p1=='False':
+            return False
+        p1 = round(p1,1)
+        p2 = convert_to_float_or_popup(instance.parent.layout.water_p2.text,popup_window=False)
+        if p2=='False' and (waters[1] in self.water_dict.keys()):
+            if (waters[2] not in self.water_dict.keys()):
+                p2 = round(100-p1,1)
+                p3 = 0.0
+            else:
+                convert_to_float_or_popup(instance.parent.layout.water_p2.text)
+                return False
+        elif p2=='False':
+            p2 = 0.0
+            p3 = 0.0
+        else:
+            p2 = round(p2,1)
+            p3 = round(100-p1-p2,1)
+        p = [p1,p2,p3]
+        waters_c = waters.copy()
+        p_c = p.copy()
+        ind_keep = [0,1,2]
+        for i,w in enumerate(waters_c):
+            if (w not in self.water_dict.keys()) or (p_c[i]<eps):
+                waters.remove(w)
+                p.remove(p_c[i])
+                ind_keep.remove(i)
+        popup = False
+        tt = ''
+        if abs(100-sum(p))>eps:
+            popup = True
+            tt += 'The percentages must sum to 100\n'
+        if len(waters)==0:
+            popup = True
+            tt += 'Select at least 1 water\n'
+        if popup:
+            f_size = 0.3*0.3*Window.height*0.2*w_size
+            content = BoxLayout()
+            content.orientation = 'vertical'
+            content.add_widget(Label(text=tt,font_size=f_size))
+            content.close=Button(text='Close',font_size=f_size)
+            content.add_widget(content.close)
+            popup = Popup(title='Warning',content=content, auto_dismiss=False,size_hint = (0.6,0.3),pos_hint = {"x":0.2,"top":0.9})
+            content.close.bind(on_press=popup.dismiss)
+            popup.open()
+            if len(p)<3:
+                instance.parent.layout.water_p3.text = 'X'
+            return False
+        data = self.get_values(waters,p)
+        instance.parent.layout.data = data
+        for k in self.keys:
+            getattr(instance.parent.layout,k).text = str(data[k])
+        for i,ind in enumerate(ind_keep):
+            getattr(instance.parent.layout,'water_p%i' % (ind+1)).text = str(p[i])
+        if len(p)<3:
+            instance.parent.layout.water_p3.text = 'X'
+        return True
+    
+    def get_values(self,waters,p):
+        c_Ca = 2.5
+        c_Mg = 4.12
+        c_HCO3 = 0.82
+        data = {}
+        keys = self.keys #keys=['General Hardness [ppm as CaCO3]','Alkalinity [ppm as CaCO3]','GH:KH','Calcium [ppm as CaCO3]','Magnesium [ppm as CaCO3]','Cost']
+        keys_water = ["Calcium [mg/l]","Magnesium [mg/l]","Bicarbonates [mg/l]","cost"]
+        for i,k in enumerate(self.keys_water_p):
+            if i<len(p):
+                data[k] = '%g%s %s' % (p[i],'%',waters[i])
+            else:
+                data[k] = '-'
+        for k in keys:
+            data[k] = 0
+        for i,w in enumerate(waters):
+            data[keys[3]] += p[i]*c_Ca*self.water_dict[w][keys_water[0]]/100
+            data[keys[4]] += p[i]*c_Mg*self.water_dict[w][keys_water[1]]/100
+            data[keys[5]] += p[i]*self.water_dict[w][keys_water[3]]/100
+            data[keys[1]] += p[i]*c_HCO3*self.water_dict[w][keys_water[2]]/100
+        for i in [1,3,4]:
+            data[keys[i]] = round(data[keys[i]],1)
+        data[keys[5]] = round(data[keys[5]],2)
+        data[keys[0]] = round(data[keys[3]]+data[keys[4]],1)
+        if data[keys[1]]==0:
+            data[keys[2]] = 'nan'
+        else:
+            data[keys[2]] = round(data[keys[0]]/data[keys[1]],1)
+        for k in keys:
+            data[k] = str(data[k])
+        return data
 
 #the screen showing the error messages
 class ErrorScreen(Screen):
@@ -852,7 +1010,7 @@ class InfoScreen(Screen):
         layout.recipe = Button(text='My Recipes Button',font_size=(1.3*f_size),size_hint_y=None,height=p*h_ext,background_color =(1, 1, 1, 0.5))
         layout.add_widget(layout.recipe)
         layout.recipe.isopen = 0
-        tt,hh = add_new_lines('After adding mixes of water to your recipes, you can click on the\n“My Recipes” button to access your recipe dictionary. You will\nfind there all your recipes and you can see their details by clicking\non them. There is also the possibility of setting a target quantity\n(in liters or gallons) of water to mix and, after clicking on\n“Get Dosage”, the required amount in grams of each water in\nthe recipe will appear. You can then mix these waters according\nto the given dosages, get your desired quantity of water,\nstart brewing your coffee and enjoy!',f_size)
+        tt,hh = add_new_lines('After adding mixes of water to your recipes, you can click on the “My Recipes” button to access your recipe dictionary. You will find there all your recipes and you can see their details by clicking on them. You can also manually create a recipe by clicking on “Add Recipe” and choosing a percentage for the waters you would like to mix.\n\nIn your recipe, there is the possibility of setting a target quantity (in liters or gallons) of water to mix and, after clicking on “Get Dosage”, the required amount in grams of each water in the recipe will appear. You can then mix these waters according to the given dosages, get your desired quantity of water, start brewing your coffee and enjoy!',f_size)
         layout.recipe.text_on_click = ['',tt]
         layout.recipe.h_on_click = [h2,hh]
         layout.recipe.label = Label(text=layout.recipe.text_on_click[layout.recipe.isopen],font_size=f_size,size_hint_y=None,height=layout.recipe.h_on_click[layout.recipe.isopen])
@@ -989,6 +1147,11 @@ class MenuScreenManager(ScreenManager):
                 getattr(self.main_recipe_screen.layout_ext.root.layout,name_curr).bind(on_release=self.change_recipe_screen)
                 self.add_widget(curr_screen)
         self.main_recipe_screen.layout_ext.back.bind(on_release=self.go2menu)
+        self.main_recipe_screen.layout_ext.add_recipe.bind(on_release=self.go_to_add_manual_recipe_screen)
+        self.add_manual_recipe_screen = AddManualRecipeScreen(self.water_dict)
+        self.add_manual_recipe_screen.root.layout_ext.add.bind(on_release=self.add_manual_recipe)
+        self.add_manual_recipe_screen.root.layout_ext.back.bind(on_release=self.go2recipeAndClear)
+        self.add_widget(self.add_manual_recipe_screen)
 
         self.select_input_screen = SelectInputScreen(self.water_dict.keys()) #add the screen to select the inputs and bind buttons
         self.select_input_screen.layout_ext.back.bind(on_release=self.go2menuAndClearInput)
@@ -1028,6 +1191,18 @@ class MenuScreenManager(ScreenManager):
         self.add_water_screen.layout_ext.layout.name.text = ''
         for k in self.add_water_screen.keys:
             getattr(self.add_water_screen.layout_ext.layout,k).text = ''
+
+    def go2recipeAndClear(self,instance): #go to the main recipe screen clear the given values in the screen to manually add a recipe
+        setattr(self,'current','main_recipe_screen')
+        self.add_manual_recipe_screen.root.layout_ext.layout.name.text = ''
+        self.add_manual_recipe_screen.root.layout_ext.layout.water_spinner1.text = self.add_manual_recipe_screen.keys_water_p[0]
+        self.add_manual_recipe_screen.root.layout_ext.layout.water_p1.text = ''
+        self.add_manual_recipe_screen.root.layout_ext.layout.water_spinner2.text = self.add_manual_recipe_screen.keys_water_p[1]
+        self.add_manual_recipe_screen.root.layout_ext.layout.water_p2.text = ''
+        self.add_manual_recipe_screen.root.layout_ext.layout.water_spinner3.text = self.add_manual_recipe_screen.keys_water_p[2]
+        self.add_manual_recipe_screen.root.layout_ext.layout.water_p3.text = 'X'
+        for k in self.add_manual_recipe_screen.keys:
+            getattr(self.add_manual_recipe_screen.root.layout_ext.layout,k).text = 'X'
 
     def go2recipe(self,instance): #go to the main recipe screen
         setattr(self,'current','main_recipe_screen')
@@ -1132,6 +1307,9 @@ class MenuScreenManager(ScreenManager):
 
     def go_to_add_water_screen(self,instance): #go to the add water screen
         setattr(self,'current','add_water')
+    
+    def go_to_add_manual_recipe_screen(self,instance): #go to the add manual recipe screen
+        setattr(self,'current','add_manual_recipe')
 
     def add_water(self,instance): #add a new water, i.e. add it to the main water screen, create a water details screen and add it to the dictionary
         keys = instance.parent.parent.keys
@@ -1337,6 +1515,13 @@ class MenuScreenManager(ScreenManager):
             delattr(self,'mix_results_screen')
         if os.path.exists('./prov_table.json'):
             os.remove('./prov_table.json')
+    
+    def add_manual_recipe(self,instance): #add manually a new recipe, i.e. without the optimization step
+        cont = instance.parent.parent.parent.view_recipe(instance.parent.view)
+        if cont:
+            cont = self.add_recipe(instance)
+            if cont:
+                self.go2recipeAndClear(instance)
 
     def add_recipe(self,instance):  #add a new recipe, i.e. add it to the main recipe screen, create a recipe details screen and add it to the dictionary
         name = instance.parent.layout.name.text
@@ -1344,16 +1529,16 @@ class MenuScreenManager(ScreenManager):
         if name in self.recipe_dict.keys():
             mess = "The name '%s'\nhas already been used" % name
             self.popup_message(mess)
-            return
+            return False
         if name=='':
             mess = "Please enter a name for the recipe"
             self.popup_message(mess)
-            return
+            return False
         max_char = 17
         if len(name)>max_char:
             mess = "The name can have\n%i characters maximum" % max_char
             self.popup_message(mess)
-            return
+            return False
         setattr(self.main_recipe_screen.layout_ext.root.layout,name,Button(text=name,font_size=self.main_recipe_screen.f_size,size_hint_y=None, height=self.main_recipe_screen.h))
         self.main_recipe_screen.layout_ext.root.layout.add_widget(getattr(self.main_recipe_screen.layout_ext.root.layout,name))
 
@@ -1363,13 +1548,14 @@ class MenuScreenManager(ScreenManager):
         new_screen.root.layout_ext.delete.bind(on_release=self.delete_recipe_popup)
         self.add_widget(new_screen)
         getattr(self.main_recipe_screen.layout_ext.root.layout,name).bind(on_release=self.change_recipe_screen)
-        setattr(self,'current','mix_results_screen')
         with open(self.file_recipe,"w") as f:
             f.write(json.dumps(self.recipe_dict, indent = 2))
             f.close()
         if hasattr(self,'add_recipe_screen'):
+            setattr(self,'current','mix_results_screen')
             self.remove_widget(self.add_recipe_screen)
             delattr(self,'add_recipe_screen')
+        return True
     
     def generate_first_time_data(self): #create example dictionary in first installation
         waters = {"Distilled": {"Calcium [mg/l]": 0.0,"Magnesium [mg/l]": 0.0,"Bicarbonates [mg/l]": 0.0,"cost": 0.45},
