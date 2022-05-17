@@ -14,7 +14,7 @@
     # You should have received a copy of the GNU General Public License
     # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#version 0.1.2
+#version 0.1.3
 from kivy.app import App
 from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -484,7 +484,7 @@ class SelectWaterSpinner(Button):
             if self.dropdown.children:
                 self.dropdown.clear_widgets()
             for water in waters:
-                btn = ToggleButton(text=water,font_size=(0.5*0.8*Window.height/20)*w_size,size_hint_y=None, height=(0.8*Window.height/20)*w_size)
+                btn = ToggleButton(text=water,font_size=(0.5*0.8*Window.height/20)*w_size,size_hint_y=None, height=(0.8*Window.height/20)*w_size,background_color = (160/255, 160/255, 160/255, 1))
                 btn.bind(state=self.select_value)
                 self.dropdown.add_widget(btn)
 
@@ -727,6 +727,7 @@ class RecipeDetailsScreen(Screen):
             def __init__(self,**kwargs):
                 super(MySpinnerOption,self).__init__(**kwargs)
                 self.font_size = f_size
+                self.background_color = (160/255, 160/255, 160/255, 1)
         layout.quantity = Spinner(text='Quantity [liter]',values=('Quantity [liter]', 'Quantity [gallon]'),size_hint_y=None,height = h,font_size = f_size,option_cls=MySpinnerOption)
         layout.add_widget(layout.quantity)
         layout.quantity_input = TextInput(font_size=f_size,size_hint_y=None,multiline=False,height=h)
@@ -794,11 +795,12 @@ class AddManualRecipeScreen(Screen):
         layout.name = TextInput(text='',font_size=f_size,size_hint_y=None,height=h,multiline=False)
         layout.add_widget(layout.name)
         self.water_dict = water_dict
-        water_list = ['-']+['%'+k for k in water_dict.keys()]
+        water_list = ['-']+['%'+k for k in self.water_dict.keys()]
         class MySpinnerOption(SpinnerOption):
             def __init__(self,**kwargs):
                 super(MySpinnerOption,self).__init__(**kwargs)
                 self.font_size = f_size
+                self.background_color = (160/255, 160/255, 160/255, 1)
         layout.water_spinner1 = Spinner(text=keys_water_p[0],values=water_list,size_hint_y=None,height = h,font_size = f_size,option_cls=MySpinnerOption)
         layout.water_p1 = TextInput(text='',font_size=f_size,size_hint_y=None,height=h,multiline=False)
         layout.add_widget(layout.water_spinner1)
@@ -833,6 +835,13 @@ class AddManualRecipeScreen(Screen):
         self.root = root
         self.add_widget(self.root)
         self.name = 'add_manual_recipe'
+
+    def update_list(self,new_water_dict):
+        self.water_dict = new_water_dict
+        water_list = ['-']+['%'+k for k in self.water_dict.keys()]
+        self.root.layout_ext.layout.water_spinner1.values = water_list
+        self.root.layout_ext.layout.water_spinner2.values = water_list
+        self.root.layout_ext.layout.water_spinner3.values = water_list
 
     def view_recipe(self,instance):
         eps = 1e-4
@@ -1309,6 +1318,7 @@ class MenuScreenManager(ScreenManager):
         setattr(self,'current','add_water')
     
     def go_to_add_manual_recipe_screen(self,instance): #go to the add manual recipe screen
+        self.add_manual_recipe_screen.update_list(self.water_dict)
         setattr(self,'current','add_manual_recipe')
 
     def add_water(self,instance): #add a new water, i.e. add it to the main water screen, create a water details screen and add it to the dictionary

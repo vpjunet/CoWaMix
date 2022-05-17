@@ -1,4 +1,8 @@
 ______________________________
+17.05.2022
+Feature update v0.1.3
+Minor update: automatically update list of waters in new feature "Add Recipe" from v0.1.2 and change background color in spinner options.
+_____________________________
 16.05.2022
 Feature update v0.1.2
 New feature: possibility to manually create a recipe by clicking on “Add Recipe” and choosing a percentage for the waters you would like to mix.
