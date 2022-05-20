@@ -14,7 +14,7 @@
     # You should have received a copy of the GNU General Public License
     # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#version 0.1.3
+#version 0.1.4
 from kivy.app import App
 from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -32,6 +32,7 @@ from kivy.uix.spinner import Spinner,SpinnerOption
 from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.metrics import sp
+from kivy.base import EventLoop
 import os
 import json
 import numpy as np
@@ -734,8 +735,11 @@ class RecipeDetailsScreen(Screen):
         layout.add_widget(layout.quantity_input)
         layout.dosage_g = {}
         for n in self.waters:
-            layout.add_widget(Label(text=n,font_size=f_size,size_hint_y=None,height=h))
-            layout.dosage_g[n] = Label(text='X g',font_size=f_size,size_hint_y=None,height=h)
+            setattr(layout,n,Button(text=n,font_size=f_size,size_hint_y=None,height=h,background_color=(1,1,1,0.4)))
+            layout.add_widget(getattr(layout,n))
+            getattr(layout,n).name = n
+            getattr(layout,n).bind(on_press=self.enable)
+            layout.dosage_g[n] = TextInput(text='X g',font_size=f_size,size_hint_y=None,height=h,multiline=False,disabled=True)
             layout.add_widget(layout.dosage_g[n])
 
         layout_ext.layout = layout
@@ -754,22 +758,68 @@ class RecipeDetailsScreen(Screen):
         self.root = root
         self.add_widget(self.root)
         self.name = 'recipe_'+name
+    
+    #function to select a quantity of a selected water to then get the quantity of the other waters with function "get_dosage". By default, no water is selected and a desired total quantity is given.
+    def enable(self,instance):
+        if not instance.parent.quantity_input.disabled:
+            instance.parent.quantity_input.text = ''
+            instance.parent.quantity_input.disabled = True
+            instance.parent.dosage_g[instance.name].disabled = False
+            instance.parent.dosage_g[instance.name].text = ''
+            getattr(instance.parent,instance.name).disabled = False
+            waters = self.waters.copy()
+            waters.remove(instance.name)
+            for n in waters:
+                getattr(instance.parent,n).disabled = True
+                instance.parent.dosage_g[n].disabled = True
+                instance.parent.dosage_g[n].text = 'X g'
+        else:
+            instance.parent.quantity_input.text = ''
+            instance.parent.quantity_input.disabled = False
+            for n in self.waters:
+                getattr(instance.parent,n).disabled = False
+                instance.parent.dosage_g[n].disabled = True
+                instance.parent.dosage_g[n].text = 'X g'
 
     #the fuction to get the dosage
     def get_dosage(self,instance):
-        if self.root.layout_ext.layout.quantity_input.text=='':
-            for n in self.waters:
-                self.root.layout_ext.layout.dosage_g[n].text = 'X g'
+        if self.root.layout_ext.layout.quantity.text=='Quantity [liter]':
+            c = 1
+        elif self.root.layout_ext.layout.quantity.text=='Quantity [gallon]':
+            c = 3.8
+        if not self.root.layout_ext.layout.quantity_input.disabled:
+            if self.root.layout_ext.layout.quantity_input.text=='':
+                for n in self.waters:
+                    self.root.layout_ext.layout.dosage_g[n].text = 'X g'
+            else:
+                input = convert_to_float_or_popup(self.root.layout_ext.layout.quantity_input.text)
+                if input!='False':
+                    q = c*input
+                    for (i,n) in enumerate(self.waters):
+                        self.root.layout_ext.layout.dosage_g[n].text = str(round(1000*q*self.p[i],1)) + ' g'
         else:
-            input = convert_to_float_or_popup(self.root.layout_ext.layout.quantity_input.text)
-            if input!='False':
-                if self.root.layout_ext.layout.quantity.text=='Quantity [liter]':
-                    c = 1
-                elif self.root.layout_ext.layout.quantity.text=='Quantity [gallon]':
-                    c = 3.8
-                q = c*input
-                for (i,n) in enumerate(self.waters):
-                    self.root.layout_ext.layout.dosage_g[n].text = str(round(1000*q*self.p[i],1)) + ' g'
+            ind = []
+            for (i,n) in enumerate(self.waters):
+                if not getattr(self.root.layout_ext.layout,n).disabled:
+                    name = n
+                    name_i = i
+                else:
+                    ind+=[i]
+            if getattr(self.root.layout_ext.layout,name).text=='':
+                for i in ind:
+                    getattr(self.root.layout_ext.layout,self.waters[i]).text = 'X g'
+            else:
+                input = convert_to_float_or_popup(self.root.layout_ext.layout.dosage_g[name].text)
+                if input!='False':
+                    input = round(input,1)
+                    q = input
+                    for i in ind:
+                        qi = self.p[i]*input/self.p[name_i]
+                        self.root.layout_ext.layout.dosage_g[self.waters[i]].text = str(round(qi,1)) + ' g'
+                        q+=qi
+                    self.root.layout_ext.layout.dosage_g[name].text = str(input)
+                    self.root.layout_ext.layout.quantity_input.text = str(round(q/(1000*c),4))
+
 
 #the screen with the details of a given recipe and with the option to get the dosage of the waters in the recipe for a desired quantity of water
 class AddManualRecipeScreen(Screen):
@@ -1019,7 +1069,7 @@ class InfoScreen(Screen):
         layout.recipe = Button(text='My Recipes Button',font_size=(1.3*f_size),size_hint_y=None,height=p*h_ext,background_color =(1, 1, 1, 0.5))
         layout.add_widget(layout.recipe)
         layout.recipe.isopen = 0
-        tt,hh = add_new_lines('After adding mixes of water to your recipes, you can click on the “My Recipes” button to access your recipe dictionary. You will find there all your recipes and you can see their details by clicking on them. You can also manually create a recipe by clicking on “Add Recipe” and choosing a percentage for the waters you would like to mix.\n\nIn your recipe, there is the possibility of setting a target quantity (in liters or gallons) of water to mix and, after clicking on “Get Dosage”, the required amount in grams of each water in the recipe will appear. You can then mix these waters according to the given dosages, get your desired quantity of water, start brewing your coffee and enjoy!',f_size)
+        tt,hh = add_new_lines('After adding mixes of water to your recipes, you can click on the “My Recipes” button to access your recipe dictionary. You will find there all your recipes and you can see their details by clicking on them. You can also manually create a recipe by clicking on “Add Recipe” and choosing a percentage for the waters you would like to mix.\n\nIn your recipe, there is the possibility of setting a target quantity (in liters or gallons) of water to mix and, after clicking on “Get Dosage”, the required amount in grams of each water in the recipe will appear. Alternatively, instead of giving a target quantity, you can select a water by clicking on its name and input a desired amount in grams for this water. After clicking on "Get Dosage", the required amounts of the other waters in the recipe will appear.\n\nYou can then mix these waters according to the given dosages, get your desired quantity of water, start brewing your coffee and enjoy!',f_size)
         layout.recipe.text_on_click = ['',tt]
         layout.recipe.h_on_click = [h2,hh]
         layout.recipe.label = Label(text=layout.recipe.text_on_click[layout.recipe.isopen],font_size=f_size,size_hint_y=None,height=layout.recipe.h_on_click[layout.recipe.isopen])
@@ -1064,7 +1114,6 @@ class InfoScreen(Screen):
 class MenuScreenManager(ScreenManager):
     def __init__(self,user_path,**kwargs):
         super(MenuScreenManager,self).__init__(**kwargs)
-
         #read the waters and recipes dictionary
         self.file_water = "/".join((user_path,'waters.json'))
         self.file_recipe = "/".join((user_path,'recipes.json'))
@@ -1220,8 +1269,11 @@ class MenuScreenManager(ScreenManager):
         setattr(self,'current','main_recipe_screen')
         keys = list(instance.parent.layout.dosage_g.keys())
         for name in keys:
+            getattr(instance.parent.layout,name).disabled = False
             instance.parent.layout.dosage_g[name].text = 'X g'
+            instance.parent.layout.dosage_g[name].disabled = True
         instance.parent.layout.quantity_input.text = ''
+        instance.parent.layout.quantity_input.disabled = False
 
     def go2mix(self,instance): #go to the input selection screen
         self.select_input_screen.update_list(self.water_dict.keys())
@@ -1582,11 +1634,10 @@ class MenuScreenManager(ScreenManager):
         with open(self.file_recipe,'w') as f:
             f.write(json.dumps(recipes, indent = 2))
             f.close()
-
+            
 
 class cowamix(App): #the app
     def on_start(self): #unable the back button from the screen
-        from kivy.base import EventLoop
         EventLoop.window.bind(on_keyboard=self.block_exit)
   
     def block_exit(self, window, key, *largs):

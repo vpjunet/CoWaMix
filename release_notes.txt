@@ -1,4 +1,8 @@
 ______________________________
+20.05.2022
+Feature update v0.1.4
+In a recipe, instead of giving a target quantity, you can now select a water by clicking on its name and input a desired amount in grams for this water. After clicking on "Get Dosage", the required amounts of the other waters in the recipe will appear.
+______________________________
 17.05.2022
 Feature update v0.1.3
 Minor update: automatically update list of waters in new feature "Add Recipe" from v0.1.2 and change background color in spinner options.
